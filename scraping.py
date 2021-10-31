@@ -1,13 +1,31 @@
-# Import Splinter and BeautifulSoup
+# Import Splinter, BeautifulSoup and Pandas
 from splinter import Browser
 from bs4 import BeautifulSoup as soup
 import pandas as pd
+import datetime as dt
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-# Set executable path (Set up Splinter)
-executable_path = {'executable_path': ChromeDriverManager().install()}
-browser = Browser('chrome', **executable_path, headless=False)
+def scrape_all():
+    # Initiate headless driver for deployment
+    executable_path = {'executable_path': ChromeDriverManager().install()}
+    browser = Browser('chrome', **executable_path, headless=True)
+
+    news_title, news_paragraph = mars_news(browser)
+
+    # Run all scrapingfunctions and store results in a dictionary
+    data = {
+        "news_title": news_title,
+        "news_paragraph": news_paragraph,
+        "featured_image": featured_image(browser),
+        "facts": mars_facts(),
+        "last_modified": dt.datetime.now()
+        "mars_hemispheres": hemispheres
+    }
+
+    # Stop webdriver and return data
+    browser.quit
+    return data
 
 # Create function
 def mars_news(browser):
@@ -70,6 +88,7 @@ def featured_image(browser):
 
 # ## Mars Facts
 
+# Scrape Mars Facts
 # Create function
 def mars_facts():
     # Add try-txcept for error handling
@@ -87,5 +106,43 @@ def mars_facts():
     df.set_index('description', inplace=True)
 
     # Convert DataFrame back to HTML, add bootstrap
-    return df.to_html()
+    return df.to_html(classes="table table-striped")
 
+# Function to scrape the hemisphere data from Challenge file
+def hemi_scrape():
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+
+        # 3. Write code to retrieve the image urls and titles for each hemisphere
+    for hemisphere in range(4):
+        hemispheres = {}
+    
+        # Find element and use it to navigate from main page to pages holding full-resolution images
+        browser.find_by_css('h3')[hemisphere].click()
+
+        # Parse the resulting html with soup
+        html = browser.html
+        hemi_soup = soup(html, 'html.parser')
+
+        # Find image and extract <href>
+        url_element = browser.find_link_by_text("Sample").first
+        hemispheres["img_url"] = url_element["href"]
+
+        # Find title and extract
+        hemispheres['title'] = hemi_soup.find('h2', class_='title').text
+
+        # Add extracted urls and titles to dictionary
+        hemisphere_image_urls.append(hemispheres)
+
+        # Navigate back to main page
+        browser.back() 
+
+
+        # %%
+        # 4. Print the list that holds the dictionary of each image url and title.
+        hemisphere_image_urls
+
+# Tell Flask script is complete and "ready for action", print scraping results to terminal
+if __name__ == "__main__":
+    # If running as script, print scraped data
+    print(scrape_all())
